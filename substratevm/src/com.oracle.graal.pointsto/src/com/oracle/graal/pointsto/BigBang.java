@@ -56,11 +56,6 @@ public interface BigBang extends ReachabilityAnalysis, HeapScanning {
 
     UnsupportedFeatures getUnsupportedFeatures();
 
-    /**
-     * Checks if all user defined limitations such as the number of types are satisfied.
-     */
-    void checkUserLimitations();
-
     OptionValues getOptions();
 
     HostedProviders getProviders();

@@ -59,6 +59,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.oracle.svm.hosted.analysis.UserLimitationsChecker;
 import org.graalvm.collections.EconomicSet;
 import org.graalvm.collections.Pair;
 import org.graalvm.compiler.api.replacements.Fold;
@@ -725,7 +726,7 @@ public class NativeImageGenerator {
 
                 /* report the unsupported features by throwing UnsupportedFeatureException */
                 bb.getUnsupportedFeatures().report(bb);
-                bb.checkUserLimitations();
+                UserLimitationsChecker.check(bb);
             } catch (UnsupportedFeatureException ufe) {
                 throw FallbackFeature.reportAsFallback(ufe);
             }
