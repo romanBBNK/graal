@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,6 +277,12 @@ public final class DynamicHub implements JavaKind.FormatWithToString, AnnotatedE
     private Object annotationsEncoding;
 
     /**
+     * Permitted subclasses for this class. This value is created during the image build by caching
+     * Class.getPermittedSubclasses() value for usage in {@link DynamicHub#getPermittedSubclasses()}
+     */
+    private Class<?>[] permittedSubclasses;
+
+    /**
      * Metadata for running class initializers at run time. Refers to a singleton marker object for
      * classes/interfaces already initialized during image generation, i.e., this field is never
      * null at run time.
@@ -359,7 +365,7 @@ public final class DynamicHub implements JavaKind.FormatWithToString, AnnotatedE
         this.classLoader = PredefinedClassesSupport.isPredefined(hostedJavaClass) ? NO_CLASS_LOADER : classLoader;
         this.nestHost = nestHost;
 
-        this.flags = NumUtil.safeToByte(makeFlag(IS_PRIMITIVE_FLAG_BIT, hostedJavaClass.isPrimitive()) |
+        this.flags = NumUtil.safeToUByte(makeFlag(IS_PRIMITIVE_FLAG_BIT, hostedJavaClass.isPrimitive()) |
                         makeFlag(IS_INTERFACE_FLAG_BIT, hostedJavaClass.isInterface()) |
                         makeFlag(IS_HIDDED_FLAG_BIT, isHidden) |
                         makeFlag(IS_RECORD_FLAG_BIT, isRecord) |
@@ -457,6 +463,11 @@ public final class DynamicHub implements JavaKind.FormatWithToString, AnnotatedE
     @Platforms(Platform.HOSTED_ONLY.class)
     public Object getAnnotationsEncoding() {
         return annotationsEncoding;
+    }
+
+    @Platforms(Platform.HOSTED_ONLY.class)
+    public void setPermittedSubclasses(Class<?>[] permittedSubclasses) {
+        this.permittedSubclasses = permittedSubclasses;
     }
 
     @Platforms(Platform.HOSTED_ONLY.class)
@@ -803,6 +814,10 @@ public final class DynamicHub implements JavaKind.FormatWithToString, AnnotatedE
     public boolean isRecord() {
         return isFlagSet(IS_RECORD_FLAG_BIT);
     }
+
+    @KeepOriginal
+    @TargetElement(onlyWith = JDK17OrLater.class)
+    public native boolean isSealed();
 
     @Substitute
     private boolean isLocalClass() {
@@ -1214,6 +1229,20 @@ public final class DynamicHub implements JavaKind.FormatWithToString, AnnotatedE
                             "All record component accessor methods of this record class must be included in the reflection configuration at image build time, then this method can be called.");
         }
         return (Target_java_lang_reflect_RecordComponent[]) result;
+    }
+
+    @Substitute
+    @TargetElement(onlyWith = JDK17OrLater.class)
+    private Class<?>[] getPermittedSubclasses() {
+        /*
+         * We make several assumptions here:
+         * - We precompute this value by using the cached value from image build time, and filtering
+         * out unreachable classes. This ensures that only references to reachable classes are included.
+         * In most cases this would work out of the box, but if user code is reliant on number of permitted
+         * classes, agent run / custom reflection configuration is required.
+         * - We ignore all classloader checks, and assume that cached result would be valid.
+         */
+        return permittedSubclasses;
     }
 
     @Substitute
