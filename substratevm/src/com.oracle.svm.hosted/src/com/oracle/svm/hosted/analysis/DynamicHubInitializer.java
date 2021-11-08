@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.oracle.graal.pointsto.constraints.UnsupportedFeatureException;
 import com.oracle.graal.pointsto.constraints.UnsupportedFeatures;
@@ -107,7 +108,14 @@ public class DynamicHubInitializer {
             /*
              * Support for permitted subclasses of a sealed class.
              */
-            hub.setPermittedSubclasses(SealedClassSupport.singleton().getPermittedSubclasses(type.getJavaClass()));
+            Class<?>[] permitted = SealedClassSupport.singleton().getPermittedSubclasses(type.getJavaClass());
+            if (permitted != null) {
+                hub.setPermittedSubclasses(
+                                Arrays.stream(permitted)
+                                                .filter(clazz -> metaAccess.lookupJavaType(clazz).isReachable())
+                                                .collect(Collectors.toList())
+                                                .toArray(new Class<?>[0]));
+            }
 
             /*
              * Support for Java annotations.
