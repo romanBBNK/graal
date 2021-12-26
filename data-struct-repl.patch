@@ -1,0 +1,1243 @@
+diff --git a/jol-maps/.gitignore b/jol-maps/.gitignore
+new file mode 100644
+index 00000000000..2f7896d1d13
+--- /dev/null
++++ b/jol-maps/.gitignore
+@@ -0,0 +1 @@
++target/
+diff --git a/jol-maps/pom.xml b/jol-maps/pom.xml
+new file mode 100644
+index 00000000000..583e7f46c50
+--- /dev/null
++++ b/jol-maps/pom.xml
+@@ -0,0 +1,51 @@
++<project>
++  <modelVersion>4.0.0</modelVersion>
++  <groupId>pt.ulisboa.tecnico.jol</groupId>
++  <artifactId>maps</artifactId>
++  <version>0.0.1</version>
++  <build>
++    <plugins>
++      <plugin>
++        <groupId>org.apache.maven.plugins</groupId>
++        <artifactId>maven-shade-plugin</artifactId>
++        <executions>
++          <execution>
++            <id>jol-samples</id>
++            <phase>package</phase>
++            <goals>
++              <goal>shade</goal>
++            </goals>
++            <configuration>
++              <finalName>jol-samples</finalName>
++              <transformers>
++                <transformer
++                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
++                  <manifestEntries>
++                    <Premain-Class>org.openjdk.jol.vm.InstrumentationSupport</Premain-Class>
++                    <Launcher-Agent-Class>org.openjdk.jol.vm.InstrumentationSupport$Installer</Launcher-Agent-Class>
++                  </manifestEntries>
++                </transformer>
++              </transformers>
++            </configuration>
++          </execution>
++        </executions>
++      </plugin>
++    </plugins>
++  </build>
++  <dependencies>
++    <dependency>
++      <groupId>org.openjdk.jol</groupId>
++      <artifactId>jol-core</artifactId>
++      <version>0.16</version>
++    </dependency>
++    <dependency>
++      <groupId>org.graalvm.sdk</groupId>
++      <artifactId>graal-sdk</artifactId>
++      <version>21.2.0</version>
++    </dependency>
++  </dependencies>
++  <properties>
++    <maven.compiler.source>1.8</maven.compiler.source>
++    <maven.compiler.target>1.8</maven.compiler.target>
++  </properties>
++</project>
+diff --git a/jol-maps/run.sh b/jol-maps/run.sh
+new file mode 100755
+index 00000000000..b9b762ac6cb
+--- /dev/null
++++ b/jol-maps/run.sh
+@@ -0,0 +1,4 @@
++#!/bin/bash
++
++mvn clean package
++java -cp target/jol-samples.jar pt.ulisboa.tecnico.jol.maps.JOL_Maps
+diff --git a/jol-maps/src/main/java/pt/ulisboa/tecnico/jol/maps/JOL_Maps.java b/jol-maps/src/main/java/pt/ulisboa/tecnico/jol/maps/JOL_Maps.java
+new file mode 100644
+index 00000000000..fb032c473d1
+--- /dev/null
++++ b/jol-maps/src/main/java/pt/ulisboa/tecnico/jol/maps/JOL_Maps.java
+@@ -0,0 +1,60 @@
++package pt.ulisboa.tecnico.jol.maps;
++
++import static java.lang.System.out;
++
++import java.util.HashMap;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++import org.graalvm.collections.EconomicMap;
++import org.graalvm.collections.Equivalence;
++import org.openjdk.jol.info.ClassLayout;
++import org.openjdk.jol.info.GraphLayout;
++import org.openjdk.jol.vm.VM;
++
++public class JOL_Maps {
++
++	@SuppressWarnings({ "rawtypes", "unchecked" })
++	public static Map populateMap(Map map, int elems) {
++		for (int i = 0; i < elems; i++) {
++			map.put(i, -i);
++		}
++		return map;
++	}
++
++	@SuppressWarnings({ "rawtypes", "unchecked" })
++	public static EconomicMap populateMap(EconomicMap map, int elems) {
++		for (int i = 0; i < elems; i++) {
++			map.put(i, -i);
++		}
++		return map;
++	}
++
++	@SuppressWarnings({ "rawtypes" })
++	public static void main(String[] args) throws Exception {
++		out.println(VM.current().details());
++		out.println(ClassLayout.parseClass(HashMap.class).toPrintable());
++		out.println(ClassLayout.parseClass(ConcurrentHashMap.class).toPrintable());
++		out.println(ClassLayout.parseClass(Class.forName("org.graalvm.collections.EconomicMapImpl")).toPrintable());
++
++		out.println(String.format("HashMap with %s elems occupies %s bytes.", 0,
++				GraphLayout.parseInstance(populateMap(new HashMap(), 0)).toFootprint()));
++		out.println(String.format("ConcurrentHashMap with %s elems occupies %s bytes.", 0,
++				GraphLayout.parseInstance(populateMap(new ConcurrentHashMap(), 0)).toFootprint()));
++		out.println(String.format("EconomicMap with %s elems occupies %s bytes.", 0,
++				GraphLayout.parseInstance(populateMap(EconomicMap.create(Equivalence.IDENTITY), 0)).toFootprint()));
++
++		for (int elems : new int[]{1, 2, 4, 8, 16, 32, 64, 128, 512, 1024}) {
++			out.println(String.format("HashMap with %s elems occupies %s bytes.",
++					elems, GraphLayout.parseInstance(populateMap(new HashMap(), elems)).totalSize()));
++			out.println(String.format("ConcurrentHashMap with %s elems occupies %s bytes.",
++					elems, GraphLayout.parseInstance(populateMap(new ConcurrentHashMap(), elems)).totalSize()));
++			out.println(String.format("EconomicMap with %s elems occupies %s bytes.",
++					elems, GraphLayout.parseInstance(populateMap(EconomicMap.create(Equivalence.IDENTITY), elems)).totalSize()));
++		}
++
++
++
++	}
++
++}
+diff --git a/object_demographics/CMakeLists.txt b/object_demographics/CMakeLists.txt
+new file mode 100644
+index 00000000000..a883ee3f8f7
+--- /dev/null
++++ b/object_demographics/CMakeLists.txt
+@@ -0,0 +1,8 @@
++cmake_minimum_required(VERSION 3.16)
++project(object_demographics_profiler)
++
++set(CMAKE_CXX_STANDARD 14)
++
++add_library(object_demographics_profiler SHARED library.cpp library.h callbacks.cpp callbacks.h)
++include_directories(/home/rbruno/git/labs-openjdk-11/java_home/include/)
++include_directories(/home/rbruno/git/labs-openjdk-11/java_home/include/linux)
+diff --git a/object_demographics/build.sh b/object_demographics/build.sh
+new file mode 100755
+index 00000000000..cab14a38bd6
+--- /dev/null
++++ b/object_demographics/build.sh
+@@ -0,0 +1,23 @@
++#!/bin/bash
++
++export JAVA_HOME=/home/rbruno/git/labs-openjdk-11/java_home/
++
++g++ -c \
++    -fPIC \
++    -g \
++    -I"$JAVA_HOME/include" \
++    -I"$JAVA_HOME/include/linux" \
++    -o library.o library.cpp
++
++g++ -c \
++    -fPIC \
++    -g \
++    -I"$JAVA_HOME/include" \
++    -I"$JAVA_HOME/include/linux" \
++    -o callbacks.o callbacks.cpp
++
++g++ -fPIC \
++    -shared \
++    -g \
++    -o liboiprofiler.so \
++    library.o callbacks.o
+diff --git a/object_demographics/callbacks.cpp b/object_demographics/callbacks.cpp
+new file mode 100644
+index 00000000000..af0914b6152
+--- /dev/null
++++ b/object_demographics/callbacks.cpp
+@@ -0,0 +1,147 @@
++#include "callbacks.h"
++#include "library.h"
++
++void update_counters(TraversalState* state, jlong class_tag, jlong* tag_ptr, jlong size)
++{
++    state->found_objects += 1;
++    state->found_size += size;
++
++    if (class_tag == HASHMAP_CLASS_TAG) {
++        state->found_HashMaps++;
++    }
++    else if (class_tag == CHASHMAP_CLASS_TAG) {
++        state->found_CHashMaps++;
++    }
++    else if (class_tag == STRING_CLASS_TAG) {
++        state->found_Strings++;
++    }
++    else if (class_tag == BOOLEAN_CLASS_TAG) {
++        state->found_Booleans++;
++    }
++    else if (class_tag == BYTE_CLASS_TAG) {
++        state->found_Bytes++;
++    }
++    else if (class_tag == CHAR_CLASS_TAG) {
++        state->found_Characters++;
++    }
++    else if (class_tag == FLOAT_CLASS_TAG) {
++        state->found_Floats++;
++    }
++    else if (class_tag == INT_CLASS_TAG) {
++        state->found_Integers++;
++    }
++    else if (class_tag == LONG_CLASS_TAG) {
++        state->found_Longs++;
++    }
++    else if (class_tag == SHORT_CLASS_TAG) {
++        state->found_Shorts++;
++    }
++    else if (class_tag == DOUBLE_CLASS_TAG) {
++        state->found_Doubles++;
++    }
++}
++
++jvmtiIterationControl JNICALL heapRootCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        void* user_data)
++{
++    TraversalState* state = (TraversalState*) user_data;
++
++    if (*tag_ptr == 0) {
++        state->found_roots += 1;
++        update_counters(state, class_tag, tag_ptr, size);
++    }
++
++    return JVMTI_ITERATION_CONTINUE;
++}
++
++jvmtiIterationControl JNICALL stackReferenceCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong thread_tag,
++        jint depth,
++        jmethodID method,
++        jint slot,
++        void* user_data)
++{
++    TraversalState* state = (TraversalState*) user_data;
++
++    // Ignore JNI locals for now...
++    if (root_kind == JVMTI_HEAP_ROOT_JNI_LOCAL || root_kind == JVMTI_HEAP_ROOT_JNI_GLOBAL) {
++        return JVMTI_ITERATION_CONTINUE;
++    }
++
++    if (*tag_ptr == 0) {
++        state->found_stacks += 1;
++        update_counters(state, class_tag, tag_ptr, size);
++    }
++
++    return JVMTI_ITERATION_CONTINUE;
++}
++
++jvmtiIterationControl JNICALL objectReferenceCallback(
++        jvmtiObjectReferenceKind reference_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong referrer_tag,
++        jint referrer_index,
++        void* user_data)
++{
++    TraversalState* state = (TraversalState*) user_data;
++
++    if (reference_kind != JVMTI_REFERENCE_ARRAY_ELEMENT && reference_kind != JVMTI_REFERENCE_FIELD && reference_kind != JVMTI_REFERENCE_STATIC_FIELD) {
++        return JVMTI_ITERATION_CONTINUE;
++    }
++
++    // install tag
++    if (*tag_ptr == 0) {
++        update_counters(state, class_tag, tag_ptr, size);
++    }
++
++    return JVMTI_ITERATION_CONTINUE;
++}
++
++jvmtiIterationControl JNICALL cleanHeapRootCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        void* user_data)
++{
++    *tag_ptr = 0;
++    return JVMTI_ITERATION_CONTINUE;
++}
++
++jvmtiIterationControl JNICALL cleanStackReferenceCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong thread_tag,
++        jint depth,
++        jmethodID method,
++        jint slot,
++        void* user_data)
++{
++    *tag_ptr = 0;
++    return JVMTI_ITERATION_CONTINUE;
++}
++
++jvmtiIterationControl JNICALL cleanObjectReferenceCallback(
++        jvmtiObjectReferenceKind reference_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong referrer_tag,
++        jint referrer_index,
++        void* user_data)
++{
++    *tag_ptr = 0;
++    return JVMTI_ITERATION_CONTINUE;
++}
+diff --git a/object_demographics/callbacks.h b/object_demographics/callbacks.h
+new file mode 100644
+index 00000000000..dd03ea89766
+--- /dev/null
++++ b/object_demographics/callbacks.h
+@@ -0,0 +1,70 @@
++#ifndef OBJECT_INLINING_PROFILER_CALLBACKS_H
++#define OBJECT_INLINING_PROFILER_CALLBACKS_H
++
++#include <jvmti.h>
++
++// ####################################################################################################################
++// ####################################################################################################################
++// Callbacks used to produce profiling information
++// ####################################################################################################################
++// ####################################################################################################################
++jvmtiIterationControl JNICALL heapRootCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        void* user_data);
++
++jvmtiIterationControl JNICALL stackReferenceCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong thread_tag,
++        jint depth,
++        jmethodID method,
++        jint slot,
++        void* user_data);
++
++jvmtiIterationControl JNICALL objectReferenceCallback(
++        jvmtiObjectReferenceKind reference_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong referrer_tag,
++        jint referrer_index,
++        void* user_data);
++
++// ####################################################################################################################
++// ####################################################################################################################
++// Callbacks used to clean all tags
++// ####################################################################################################################
++// ####################################################################################################################
++jvmtiIterationControl JNICALL cleanHeapRootCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        void* user_data);
++
++jvmtiIterationControl JNICALL cleanStackReferenceCallback(
++        jvmtiHeapRootKind root_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong thread_tag,
++        jint depth,
++        jmethodID method,
++        jint slot,
++        void* user_data);
++
++jvmtiIterationControl JNICALL cleanObjectReferenceCallback(
++        jvmtiObjectReferenceKind reference_kind,
++        jlong class_tag,
++        jlong size,
++        jlong* tag_ptr,
++        jlong referrer_tag,
++        jint referrer_index,
++        void* user_data);
++
++#endif //OBJECT_DEMOGRAPHICS_PROFILER_CALLBACKS_H
+diff --git a/object_demographics/library.cpp b/object_demographics/library.cpp
+new file mode 100644
+index 00000000000..83260dfebb6
+--- /dev/null
++++ b/object_demographics/library.cpp
+@@ -0,0 +1,335 @@
++#include <jvmti.h>
++#include <cstring>
++#include <pthread.h>
++#include <unistd.h>
++#include <sys/time.h>
++#include <fstream>
++
++#include "library.h"
++#include "callbacks.h"
++
++#define SUCCESS 0
++#define FAILURE 1
++
++// cached pointer to the JVM structure
++static JavaVM* vm;
++
++// cached struct of the profiler thread
++static pthread_t thread;
++
++static volatile bool should_finish = false;
++static volatile bool finished = false;
++static volatile bool sleeping = false;
++
++static int total_iterations = 0;
++
++static std::ofstream out;
++
++int setup_jni_jvmti(JNIEnv** jni, jvmtiEnv** jvmti)
++{
++    jint jni_result;
++    jvmtiError jvmti_result;
++    jvmtiCapabilities capabilities;
++
++    // this is required to allow the JVM to initialize properly
++    sleep(10);
++
++    // attach thread to JVM (required to access JNI/JVMTI)
++    jni_result = vm->AttachCurrentThread((void **) jni, nullptr);
++    if (jni_result != JNI_OK) {
++        out << "[setup_jni_jvmti] ERROR: failed to attach profiler thread to jvm" << std::endl;
++        return FAILURE;
++    }
++
++    // get jvmti
++    jni_result = vm->GetEnv((void **) jvmti, JVMTI_VERSION_1_1);
++    if (jni_result != JNI_OK) {
++        out << "[setup_jni_jvmti] ERROR: unable to access JVMTI\n " << jni_result << std::endl;
++        return FAILURE;
++    }
++
++    // request object tagging feature
++    (void)memset(&capabilities, 0, sizeof(jvmtiCapabilities));
++    capabilities.can_tag_objects = 1;
++    jvmti_result = (*jvmti)->AddCapabilities(&capabilities);
++    if (jvmti_result != JVMTI_ERROR_NONE) {
++        out << "[setup_jni_jvmti] ERROR: JVMTI does not support object tagging\n" << std::endl;
++        return FAILURE;
++    }
++
++    return SUCCESS;
++}
++
++int tag_classes(jvmtiEnv* jvmti, TraversalState* state)
++{
++    jvmtiError jvmti_result;
++    jint found_count;
++    jclass* found_classes;
++    struct timeval st, ft;
++
++    gettimeofday(&st, nullptr);
++    jvmti_result = jvmti->GetLoadedClasses(&found_count, &found_classes);
++    if (jvmti_result != JVMTI_ERROR_NONE) {
++        out << "[tag_classes] ERROR: failed to get loaded classes\n" << std::endl;
++        return FAILURE;
++    }
++
++    for (int i = 0; i < found_count; i++) {
++        char* signature_charptr;
++        char* generic_charptr;
++
++        jvmti_result = jvmti->GetClassSignature(found_classes[i], &signature_charptr, &generic_charptr);
++        if (jvmti_result != JVMTI_ERROR_NONE) {
++            out << "[tag_classes] ERROR: to get class signature\n" << std::endl;
++            return FAILURE;
++        }
++
++        if(strcmp(signature_charptr, HASHMAP_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], HASHMAP_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, CHASHMAP_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], CHASHMAP_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, STRING_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], STRING_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, STRING_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], STRING_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, BOOLEAN_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], BOOLEAN_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, BYTE_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], BYTE_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, CHAR_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], CHAR_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, FLOAT_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], FLOAT_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, INT_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], INT_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, LONG_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], LONG_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, SHORT_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], SHORT_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else if(strcmp(signature_charptr, DOUBLE_SIGNATURE) == 0) {
++            jvmti_result = jvmti->SetTag(found_classes[i], DOUBLE_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++        else {
++            jvmti_result = jvmti->SetTag(found_classes[i], UNTRACKED_CLASS_TAG);
++            if (jvmti_result != JVMTI_ERROR_NONE) {
++                out << "[tag_classes] ERROR: failed to tag class\n" << std::endl;
++                return FAILURE;
++            }
++        }
++
++        jvmti->Deallocate((unsigned char*) signature_charptr);
++        jvmti->Deallocate((unsigned char*) generic_charptr);
++    }
++    gettimeofday(&ft, nullptr);
++
++    out << "[tag_classes] found ";
++    out << found_count << " classes; ";
++    out << "took " << ((ft.tv_sec - st.tv_sec) * 1000000) + (ft.tv_usec - st.tv_usec) << " us" << std::endl;
++    return SUCCESS;
++}
++
++int tag_objects(jvmtiEnv* jvmti, TraversalState* state)
++{
++    jvmtiError jvmti_result;
++    struct timeval st, ft;
++
++    gettimeofday(&st,nullptr);
++    jvmti_result = jvmti->IterateOverReachableObjects(heapRootCallback, stackReferenceCallback, objectReferenceCallback, state);
++    gettimeofday(&ft,nullptr);
++
++    if (jvmti_result != JVMTI_ERROR_NONE) {
++        out << "[tag_objects] ERROR: JVMTI IterateOverReachableObjects failed (jvmti_result " << jvmti_result << ")" << std::endl;
++        return FAILURE;
++    }
++
++    out << "[tag_objects] found ";
++    out << state->found_roots << " roots ";
++    out << state->found_stacks << " stacks ";
++    out << state->found_objects << " objects ";
++    out << state->found_size << " bytes ";
++    out << state->found_HashMaps << " HashMaps ";
++    out << state->found_CHashMaps << " ConcurrentHashMaps ";
++    out << state->found_Strings << " Strings ";
++    out << state->found_Booleans << " Booleans ";
++    out << state->found_Bytes << " Bytes ";
++    out << state->found_Characters << " Characters ";
++    out << state->found_Floats << " Floats ";
++    out << state->found_Integers << " Integers ";
++    out << state->found_Longs << " Longs ";
++    out << state->found_Shorts << " Shorts ";
++    out << state->found_Doubles << " Doubles ";
++    out << "took " << ((ft.tv_sec - st.tv_sec) * 1000000) + (ft.tv_usec - st.tv_usec) << " us" << std::endl;
++
++    return SUCCESS;
++}
++
++
++int clean_tags(jvmtiEnv* jvmti)
++{
++    jvmtiError jvmti_result;
++    struct timeval st, ft;
++
++    gettimeofday(&st, nullptr);
++    jvmti_result = jvmti->IterateOverReachableObjects(cleanHeapRootCallback, cleanStackReferenceCallback, cleanObjectReferenceCallback, nullptr);
++    gettimeofday(&ft,nullptr);
++
++    if (jvmti_result != JVMTI_ERROR_NONE) {
++        out << "[clean_tags] ERROR: JVMTI IterateOverReachableObjects failed (jvmti_result " << jvmti_result << ")" << std::endl;
++        return FAILURE;
++    }
++
++    out << "[clean_tags] took " << ((ft.tv_sec - st.tv_sec) * 1000000) + (ft.tv_usec - st.tv_usec) << " us" << std::endl;
++    return SUCCESS;
++}
++
++
++void* object_profiler_loop(void* ptr)
++{
++    JNIEnv* env = nullptr;
++    jvmtiEnv* jvmti = nullptr;
++
++    if (setup_jni_jvmti(&env, &jvmti) != SUCCESS) {
++        out << "[object_profiler_loop] ERROR: failed to setup jni and/or jvmti" << std::endl;
++        goto end;
++    }
++
++    while(!should_finish) {
++        TraversalState state = {
++                .found_roots = 0,
++                .found_stacks = 0,
++                .found_objects = 0,
++                .found_size = 0,
++                .found_HashMaps = 0,
++                .found_CHashMaps = 0,
++                .found_Strings = 0,
++                .found_Booleans = 0,
++                .found_Bytes = 0,
++                .found_Characters = 0,
++                .found_Floats = 0,
++                .found_Integers = 0,
++                .found_Longs = 0,
++                .found_Shorts = 0,
++                .found_Doubles=0 };
++        struct timeval st, ft;
++
++        out << "[object_profiler_loop] starting iteration " << total_iterations + 1 << std::endl;
++
++        gettimeofday(&st,nullptr);
++
++        if (tag_classes(jvmti, &state) != SUCCESS) {
++            out << "[object_profiler_loop] ERROR: failed to tag classes" << std::endl;
++            break;
++        }
++
++        if (tag_objects(jvmti, &state) != SUCCESS) {
++            out << "[object_profiler_loop] ERROR: failed to tag objects" << std::endl;
++            break;
++        }
++
++        if (clean_tags(jvmti) != SUCCESS) {
++            out <<  "[object_profiler_loop] ERROR: failed to clean nonstring tags" << std::endl;
++            break;
++        }
++
++        gettimeofday(&ft,nullptr);
++
++        // update counters
++        total_iterations++;
++        out << "[object_profiler_loop] finished iteration " << total_iterations << "; took " << ((ft.tv_sec - st.tv_sec) * 1000000) + (ft.tv_usec - st.tv_usec) << " us" << std::endl;
++
++        sleeping = true;
++        sleep(SAMPLING_INTERVAL);
++        sleeping = false;
++    }
++    end:
++    finished = true;
++    return nullptr;
++}
++
++extern "C"
++JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
++{
++    vm = jvm;
++    out = std::ofstream ("profile_output.txt");
++
++    int c_result = pthread_create(&thread, nullptr, object_profiler_loop, nullptr);
++    if (c_result != 0) {
++        out << "ERROR: could not create profiler thread" << std::endl;
++    }
++
++    return JNI_OK;
++}
++
++extern "C"
++JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *jvm)
++{
++    should_finish = true;
++    while (!sleeping && !finished) {
++        sleep(1);
++    }
++
++    out << "Profiler iterations = " << total_iterations << std::endl;
++    out.close();
++
++    // make sure the thread knows it must die
++    //pthread_join(thread, NULL);
++}
+diff --git a/object_demographics/library.h b/object_demographics/library.h
+new file mode 100644
+index 00000000000..f77b0de2306
+--- /dev/null
++++ b/object_demographics/library.h
+@@ -0,0 +1,56 @@
++#ifndef OBJECT_INLINING_PROFILER_LIBRARY_H
++#define OBJECT_INLINING_PROFILER_LIBRARY_H
++
++#include <jvmti.h>
++#include <map>
++#include <vector>
++#include <algorithm>
++
++// Sampling interval in seconds
++#define SAMPLING_INTERVAL 10
++
++#define HASHMAP_SIGNATURE "Ljava/util/HashMap;"
++#define CHASHMAP_SIGNATURE "Ljava/util/concurrent/ConcurrentHashMap;"
++#define STRING_SIGNATURE "Ljava/lang/String;"
++#define BOOLEAN_SIGNATURE "Ljava/lang/Boolean;"
++#define BYTE_SIGNATURE "Ljava/lang/Byte;"
++#define CHAR_SIGNATURE "Ljava/lang/Character;"
++#define FLOAT_SIGNATURE "Ljava/lang/Float;"
++#define INT_SIGNATURE "Ljava/lang/Integer;"
++#define LONG_SIGNATURE "Ljava/lang/Long;"
++#define SHORT_SIGNATURE "Ljava/lang/Short;"
++#define DOUBLE_SIGNATURE "Ljava/lang/Double;"
++
++#define UNTRACKED_CLASS_TAG 0
++#define STRING_CLASS_TAG 1
++#define BOOLEAN_CLASS_TAG 2
++#define BYTE_CLASS_TAG 3
++#define CHAR_CLASS_TAG 4
++#define FLOAT_CLASS_TAG 5
++#define INT_CLASS_TAG 6
++#define LONG_CLASS_TAG 7
++#define SHORT_CLASS_TAG 8
++#define DOUBLE_CLASS_TAG 9
++#define HASHMAP_CLASS_TAG 10
++#define CHASHMAP_CLASS_TAG 11
++
++typedef struct TraversalState {
++    // counters of found references
++    unsigned int found_roots;
++    unsigned int found_stacks;
++    unsigned int found_objects;
++    unsigned long found_size;
++    unsigned int found_HashMaps;
++    unsigned int found_CHashMaps;
++    unsigned int found_Strings;
++    unsigned int found_Booleans;
++    unsigned int found_Bytes;
++    unsigned int found_Characters;
++    unsigned int found_Floats;
++    unsigned int found_Integers;
++    unsigned int found_Longs;
++    unsigned int found_Shorts;
++    unsigned int found_Doubles;
++} TraversalState;
++
++#endif //OBJECT_DEMOGRAFICS_PROFILER_LIBRARY_H
+diff --git a/object_demographics/test/App.java b/object_demographics/test/App.java
+new file mode 100644
+index 00000000000..f41fe2b07dc
+--- /dev/null
++++ b/object_demographics/test/App.java
+@@ -0,0 +1,38 @@
++import java.util.*;
++
++public class App {
++
++	String s1;
++	String s2;
++	Map<Integer, String> stringMap;
++
++	public App(String s1, String s2) {
++		this.s1 = s1;
++		this.s2 = s2;
++		this.stringMap = new HashMap<>();
++	}
++
++	private void buildMap() {
++	    for (int i = 0; i < 256; i++) {
++	        stringMap.put(i, String.valueOf(i));
++        }
++    }
++
++	@Override
++	public String toString() {
++		return s1 + " " + s2;
++	}
++
++	public static void main(String[] args) throws Exception {
++		String s1 = "Hellóã";
++		String s2 = "World";
++		App app = new App(s1, s1);
++		app.buildMap();
++		while(true) {
++			System.out.println(app);
++			System.out.println(app.stringMap.size());
++			Thread.sleep(2000);
++		}
++	}
++}
++
+diff --git a/object_demographics/test/run.sh b/object_demographics/test/run.sh
+new file mode 100755
+index 00000000000..cd14ad76fe7
+--- /dev/null
++++ b/object_demographics/test/run.sh
+@@ -0,0 +1,5 @@
++#!/bin/bash
++
++javac App.java
++
++java -agentpath:../liboiprofiler.so App
+diff --git a/run.sh b/run.sh
+new file mode 100755
+index 00000000000..c74858610b8
+--- /dev/null
++++ b/run.sh
+@@ -0,0 +1,37 @@
++#!/bin/bash
++
++JAVA_HOME=/home/rbruno/software/labsjdk-ce-11.0.12-jvmci-21.2-b05
++GRAALVM_HOME=/home/rbruno/git/graal-pvt/vm/latest_graalvm_home
++
++#ENV=ni-ce
++ENV=svm
++
++function build_graal {
++        ~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV clean --all
++        ~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV build
++}
++
++function run_benchmark {
++	# Run the NI profiler which counts the number of allocated maps and the number of map entries.
++	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-shopcart-wrk-mixed-small.log
++	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-petclinic-wrk-mixed-small.log
++	# Run the JVMCI profiler which periodically counts the maps in the heap.
++	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-shopcart-wrk-mixed-small.log
++	mv profile_output.txt hotspot-shopcart-wrk-mixed-small.profile
++	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-petclinic-wrk-mixed-small.log
++	mv profile_output.txt hotspot-petclinic-wrk-mixed-small.profile
++}
++
++function build_image {
++	SHOPCART_JAR=/home/rbruno/.mx/cache/SHOPCART_0.3.5_da961b7b81c161fda51ac1939a983cbfc95a5b28/shopcart-0.3.5.extracted/shopcart-0.3.5/shopcart-0.3.5-all.jar
++#	IGV="$IGV,io.micronaut.discovery.cloud.ComputeInstanceMetadataResolverUtils.populateMetadata"
++#	IGV="$IGV,io.micronaut.aop.chain.InterceptorChain.resolveInterceptorsInternal"
++#	IGV="$IGV,io.micronaut.core.beans.ReflectionBeanMap.containsKey"
++#	IGV="$IGV -H:Dump=:2 -H:-PrintGraphFile -H:MethodFilter=$methodfilter"
++	$GRAALVM_HOME/bin/native-image $IGV -H:Name=shopcart-0.3.5-all -jar $SHOPCART_JAR 2>&1 | tee image.log
++}
++
++build_graal
++#build_image
++run_benchmark
++beep
+diff --git a/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerFeature.java b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerFeature.java
+new file mode 100644
+index 00000000000..64d35eda628
+--- /dev/null
++++ b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerFeature.java
+@@ -0,0 +1,55 @@
++package com.oracle.svm.hosted.datastructrepl;
++
++import org.graalvm.compiler.api.replacements.SnippetReflectionProvider;
++import org.graalvm.compiler.options.Option;
++import org.graalvm.compiler.phases.tiers.Suites;
++import org.graalvm.compiler.phases.util.Providers;
++import com.oracle.graal.pointsto.meta.AnalysisMethod;
++import com.oracle.svm.core.annotate.AutomaticFeature;
++import com.oracle.svm.core.graal.GraalFeature;
++import com.oracle.svm.core.graal.meta.RuntimeConfiguration;
++import com.oracle.svm.core.graal.meta.SubstrateForeignCallsProvider;
++import com.oracle.svm.core.jdk.RuntimeSupport;
++import com.oracle.svm.core.option.HostedOptionKey;
++import com.oracle.svm.hosted.FeatureImpl.BeforeAnalysisAccessImpl;
++import com.oracle.svm.core.snippets.SnippetRuntime.SubstrateForeignCallDescriptor;
++
++@AutomaticFeature
++public class DataStructProfilerFeature implements GraalFeature {
++
++    public static class Options {
++        @Option(help = "Enable data structure profiler.")//
++        public static final HostedOptionKey<Boolean> DataStructProfiler = new HostedOptionKey<>(true);
++    }
++
++    @Override
++    public void beforeAnalysis(BeforeAnalysisAccess a) {
++        BeforeAnalysisAccessImpl access = (BeforeAnalysisAccessImpl) a;
++
++        if (!Options.DataStructProfiler.getValue()) {
++            return;
++        }
++
++        for (SubstrateForeignCallDescriptor descriptor : DataStructProfilerSnippets.FOREIGN_CALLS) {
++            access.getBigBang().addRootMethod((AnalysisMethod) descriptor.findMethod(access.getMetaAccess()));
++        }
++
++        RuntimeSupport.getRuntimeSupport().addShutdownHook(DataStructProfilerSnippets.dumpProfileResults());
++    }
++
++    @Override
++    public void registerGraalPhases(Providers providers, SnippetReflectionProvider snippetReflection, Suites suites, boolean hosted) {
++        if (Options.DataStructProfiler.getValue()) {
++            suites.getHighTier().prependPhase(new DataStructProfilerPhase());
++        }
++    }
++
++    @Override
++    public void registerForeignCalls(RuntimeConfiguration runtimeConfig, Providers providers, SnippetReflectionProvider snippetReflection,
++                    SubstrateForeignCallsProvider foreignCalls, boolean hosted) {
++        for (SubstrateForeignCallDescriptor descriptor : DataStructProfilerSnippets.FOREIGN_CALLS) {
++            foreignCalls.register(providers, descriptor);
++        }
++    }
++
++}
+diff --git a/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerPhase.java b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerPhase.java
+new file mode 100644
+index 00000000000..dae9a22bf32
+--- /dev/null
++++ b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerPhase.java
+@@ -0,0 +1,133 @@
++package com.oracle.svm.hosted.datastructrepl;
++
++import org.graalvm.compiler.graph.Node;
++import org.graalvm.compiler.nodes.ConstantNode;
++import org.graalvm.compiler.nodes.FrameState;
++import org.graalvm.compiler.nodes.PhiNode;
++import org.graalvm.compiler.nodes.StructuredGraph;
++import org.graalvm.compiler.nodes.ValueNode;
++import org.graalvm.compiler.nodes.calc.IsNullNode;
++import org.graalvm.compiler.nodes.extended.ForeignCallNode;
++import org.graalvm.compiler.nodes.java.FinalFieldBarrierNode;
++import org.graalvm.compiler.nodes.java.LoadFieldNode;
++import org.graalvm.compiler.nodes.java.NewInstanceNode;
++import org.graalvm.compiler.nodes.java.StoreFieldNode;
++import org.graalvm.compiler.phases.Phase;
++
++import com.oracle.graal.pointsto.meta.AnalysisField;
++import com.oracle.svm.core.nodes.SubstrateMethodCallTargetNode;
++import com.oracle.svm.hosted.meta.HostedField;
++
++public class DataStructProfilerPhase extends Phase {
++
++    private static boolean canBeHashMap(String typename) {
++        switch (typename) {
++            case "Ljava/util/HashMap;":
++            case "Ljava/util/concurrent/ConcurrentHashMap;":
++            case "Ljava/util/concurrent/ConcurrentMap;":
++            case "Ljava/util/AbstractMap;":
++            case "Ljava/util/Map;":
++                return true;
++            default:
++                return false;
++        }
++    }
++
++    /*-
++     * We track NewInstanceNode. Objects can escape into:
++     * - StoreField (as value)
++     * - Return
++     * - MethodCall (as argument
++     *
++     * We need call graph analysis to continue looking into Return and MethodCall
++     *
++     * We track LoadFieldNode. Objects can escape into:
++     * - Phi...
++     *
++     * We need to
++     */
++
++    private static void printNewInstanceNodeUsage(NewInstanceNode nin, Node usage) {
++        String prefix = "[DataStructProfiler] \t NewInstanceNode usage:";
++
++        if (usage instanceof SubstrateMethodCallTargetNode) {
++            SubstrateMethodCallTargetNode casted = (SubstrateMethodCallTargetNode) usage;
++            System.out.println(String.format("%s method call %s (as %s)",
++                            prefix,
++                            casted.targetName(),
++                            casted.arguments().first() == nin ? "target" : "argument"));
++        } else if (usage instanceof StoreFieldNode) {
++            StoreFieldNode casted = (StoreFieldNode) usage;
++            System.out.println(String.format("%s field store %s:%s (as value)",
++                            prefix,
++                            casted.field().getDeclaringClass().getName(),
++                            casted.field().getName()));
++        } else {
++            System.out.println(String.format("%s %s", prefix, usage));
++        }
++    }
++
++    private static void printLoadFieldNodeUsage(LoadFieldNode lfn, Node usage) {
++        String prefix = "[DataStructProfiler] \t LoadFieldNode usage:";
++
++        if (usage instanceof PhiNode) {
++            for (Node phiUsage : lfn.usages()) {
++                System.out.println(String.format("%s (after Phi) %s", prefix, phiUsage));
++            }
++        }
++
++        System.out.println(String.format("%s %s", prefix, usage));
++    }
++
++    @Override
++    protected void run(StructuredGraph graph) {
++        for (Node n : graph.getNodes()) {
++
++            if (n instanceof NewInstanceNode) {
++                NewInstanceNode nin = (NewInstanceNode) n;
++                if (canBeHashMap(nin.instanceClass().getName())) {
++                    System.out.println(String.format("[DataStructProfiler] NewInstanceNode in %s:%s",
++                                    graph.method().getDeclaringClass().getName(),
++                                    graph.method().getName()));
++                    for (Node usage : nin.usages()) {
++                        // Skip if node is used in FrameState or FinalFieldBarrierNode
++                        if (usage instanceof FrameState || usage instanceof FinalFieldBarrierNode) {
++                            continue;
++                        }
++
++                        // Skip if node is used in store but not as a value.
++                        if (usage instanceof StoreFieldNode && ((StoreFieldNode) usage).value() != nin) {
++                            continue;
++                        }
++
++                        printNewInstanceNodeUsage(nin, usage);
++                    }
++                    ForeignCallNode fcn = graph.add(new ForeignCallNode(DataStructProfilerSnippets.PROFILE_NEW_INSTANCE, new ValueNode[]{}));
++                    graph.addBeforeFixed(nin, fcn);
++                }
++            }
++
++            if (n instanceof LoadFieldNode) {
++                LoadFieldNode lfn = (LoadFieldNode) n;
++                if (canBeHashMap(lfn.field().getType().getName())) {
++                    System.out.println(String.format("[DataStructProfiler] installing profiler for LoadFieldNode in %s:%s",
++                                    lfn.field().getDeclaringClass().getName(),
++                                    lfn.field().getName()));
++                    for (Node usage : lfn.usages()) {
++                        // Skip if node is used a null check
++                        if (usage instanceof IsNullNode) {
++                            continue;
++                        }
++
++                        printLoadFieldNodeUsage(lfn, usage);
++                    }
++
++                    AnalysisField af = ((HostedField) lfn.field()).wrapped;
++                    ValueNode[] args = new ValueNode[]{lfn, ConstantNode.forInt(af.getId(), graph)};
++                    ForeignCallNode fcn = graph.add(new ForeignCallNode(DataStructProfilerSnippets.PROFILE_FIELD_LOAD, args));
++                    graph.addBeforeFixed(lfn, fcn);
++                }
++            }
++        }
++    }
++}
+diff --git a/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerSnippets.java b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerSnippets.java
+new file mode 100644
+index 00000000000..fb4ea86f6b0
+--- /dev/null
++++ b/substratevm/src/com.oracle.svm.hosted/src/com/oracle/svm/hosted/datastructrepl/DataStructProfilerSnippets.java
+@@ -0,0 +1,124 @@
++package com.oracle.svm.hosted.datastructrepl;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.Comparator;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
++
++import com.oracle.svm.core.snippets.SnippetRuntime;
++import com.oracle.svm.core.snippets.SubstrateForeignCallTarget;
++
++public class DataStructProfilerSnippets {
++
++    static class AverageCalculator {
++
++        private int samples;
++        private long sum;
++
++        public void update(int partial) {
++            sum = sum + partial;
++            samples = samples + 1;
++        }
++
++        public int average() {
++            return samples == 0 ? 0 : (int) sum / samples;
++        }
++
++        @Override
++        public String toString() {
++            return String.format("%s", average());
++        }
++    }
++
++    static class AverageCalculatorComparator implements Comparator<AverageCalculator> {
++
++        @Override
++        public int compare(AverageCalculator o1, AverageCalculator o2) {
++            return o1.average() - o2.average();
++        }
++
++    }
++
++    public static final SnippetRuntime.SubstrateForeignCallDescriptor PROFILE_NEW_INSTANCE = SnippetRuntime.findForeignCall(DataStructProfilerSnippets.class, "profileNewInstance", false);
++    public static final SnippetRuntime.SubstrateForeignCallDescriptor PROFILE_FIELD_LOAD = SnippetRuntime.findForeignCall(DataStructProfilerSnippets.class, "profileFieldLoad", false);
++    public static final SnippetRuntime.SubstrateForeignCallDescriptor[] FOREIGN_CALLS = new SnippetRuntime.SubstrateForeignCallDescriptor[]{PROFILE_NEW_INSTANCE, PROFILE_FIELD_LOAD};
++
++    private static int newInstanceCounter = 0;
++    private static Map<Integer, Integer> sizesPerObjectHashcode = new ConcurrentHashMap<>();
++    private static Map<Integer, AverageCalculator> sizesPerObjectFieldId = new ConcurrentHashMap<>();
++
++    @SubstrateForeignCallTarget(stubCallingConvention = false)
++    public static void profileNewInstance() {
++        newInstanceCounter += 1;
++    }
++
++    @SubstrateForeignCallTarget(stubCallingConvention = false)
++    public static void profileFieldLoad(Object object, int fieldId) {
++
++        if (object != null && (object instanceof HashMap || object instanceof ConcurrentHashMap)) {
++            Integer hashcode = System.identityHashCode(object);
++            Integer size = ((Map) object).size();
++            sizesPerObjectHashcode.put(hashcode, size);
++            if (!sizesPerObjectFieldId.containsKey(fieldId)) {
++                sizesPerObjectFieldId.put(fieldId, new AverageCalculator());
++            }
++            sizesPerObjectFieldId.get(fieldId).update(size);
++        }
++    }
++
++    private static void dumpNewInstanceCounter() {
++        System.out.println(String.format("[DataStructProfilerSnippets:dumpNewInstanceCounter] Found %s instancesof Map.", newInstanceCounter));
++    }
++
++    private static void dumpSizesPerObjectHashcode() {
++        String tag = "dumpSizesPerObjectHashcode";
++        System.out.println(String.format("[DataStructProfilerSnippets:%s] Found %s Map objects.", tag, sizesPerObjectHashcode.size()));
++
++        HashMap<Integer, Integer> cardinalityPerSize = new HashMap<>();
++        for (Integer size : sizesPerObjectHashcode.values()) {
++            if (!cardinalityPerSize.containsKey(size)) {
++                cardinalityPerSize.put(size, 1);
++            } else {
++                cardinalityPerSize.put(size, cardinalityPerSize.get(size) + 1);
++            }
++        }
++
++        List<Integer> sortedSizes = new ArrayList<>(cardinalityPerSize.keySet());
++        Collections.sort(sortedSizes);
++        for (Integer size : sortedSizes) {
++            System.out.println(String.format("[DataStructProfilerSnippets:%s] Found %s Maps with %s elements.", tag, cardinalityPerSize.get(size), size));
++        }
++    }
++
++    private static void dumpSizesPerObjectFieldId() {
++        String tag = "dumpSizesPerObjectFieldId";
++        System.out.println(String.format("[DataStructProfilerSnippets:%s] Found %s Map fields.", tag, sizesPerObjectFieldId.size()));
++
++        HashMap<Integer, Integer> cardinalityPerSize = new HashMap<>();
++        for (AverageCalculator size : sizesPerObjectFieldId.values()) {
++            int average = size.average();
++            if (!cardinalityPerSize.containsKey(average)) {
++                cardinalityPerSize.put(average, 1);
++            } else {
++                cardinalityPerSize.put(average, cardinalityPerSize.get(average) + 1);
++            }
++        }
++
++        List<Integer> sortedSizes = new ArrayList<>(cardinalityPerSize.keySet());
++        Collections.sort(sortedSizes);
++        for (Integer size : sortedSizes) {
++            System.out.println(String.format("[DataStructProfilerSnippets:%s] Found %s Maps with %s elements.", tag, cardinalityPerSize.get(size), size));
++        }
++    }
++
++    public static Runnable dumpProfileResults() {
++        return () -> {
++            dumpNewInstanceCounter();
++            dumpSizesPerObjectHashcode();
++            dumpSizesPerObjectFieldId();
++        };
++    }
++}
