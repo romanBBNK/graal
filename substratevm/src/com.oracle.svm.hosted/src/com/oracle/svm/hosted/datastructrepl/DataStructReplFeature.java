@@ -15,38 +15,27 @@ import com.oracle.svm.hosted.FeatureImpl.BeforeAnalysisAccessImpl;
 import com.oracle.svm.core.snippets.SnippetRuntime.SubstrateForeignCallDescriptor;
 
 @AutomaticFeature
-public class DataStructProfilerFeature implements GraalFeature {
+public class DataStructReplFeature implements GraalFeature {
 
     public static class Options {
-        @Option(help = "Enable data structure profiler.")//
-        public static final HostedOptionKey<Boolean> DataStructProfiler = new HostedOptionKey<>(true);
+        @Option(help = "Enable data structure scanner.")//
+        public static final HostedOptionKey<Boolean> DataStructScanner = new HostedOptionKey<>(true);
     }
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess a) {
         BeforeAnalysisAccessImpl access = (BeforeAnalysisAccessImpl) a;
 
-        if (!Options.DataStructProfiler.getValue()) {
+        if (!Options.DataStructScanner.getValue()) {
             return;
         }
-
-        for (SubstrateForeignCallDescriptor descriptor : DataStructProfilerSnippets.FOREIGN_CALLS) {
-            access.getBigBang().addRootMethod((AnalysisMethod) descriptor.findMethod(access.getMetaAccess()));
-        }
-
-        RuntimeSupport.getRuntimeSupport().addShutdownHook(DataStructProfilerSnippets.dumpProfileResults());
     }
 
     @Override
     public void registerGraalPhases(Providers providers, SnippetReflectionProvider snippetReflection, Suites suites, boolean hosted) {
-        if (Options.DataStructProfiler.getValue()) {
-            suites.getHighTier().prependPhase(new DataStructProfilerPhase());
+        if (Options.DataStructScanner.getValue()) {
+            suites.getHighTier().prependPhase(new DataStructReplPhase());
         }
-    }
-
-    @Override
-    public void registerForeignCalls(SubstrateForeignCallsProvider foreignCalls) {
-        foreignCalls.register(DataStructProfilerSnippets.FOREIGN_CALLS);
     }
 
 }

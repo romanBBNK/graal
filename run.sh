@@ -1,24 +1,24 @@
 #!/bin/bash
 
-JAVA_HOME=/home/rbruno/software/labsjdk-ce-11.0.12-jvmci-21.2-b05
-GRAALVM_HOME=/home/rbruno/git/graal-pvt/vm/latest_graalvm_home
+JAVA_HOME=/home/romanb/MEGAsync/MSc/Thesis/Code/graalvm-ce-java17-21.3.0
+GRAALVM_HOME=~/MEGAsync/MSc/Thesis/Code/graal/vm/latest_graalvm_home
 
 #ENV=ni-ce
 ENV=svm
 
 function build_graal {
-        ~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV clean --all
-        ~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV build
+        mx --java-home $JAVA_HOME -p vm --env $ENV clean --all
+        mx --java-home $JAVA_HOME -p vm --env $ENV build
 }
 
 function run_benchmark {
 	# Run the NI profiler which counts the number of allocated maps and the number of map entries.
-	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-shopcart-wrk-mixed-small.log
-	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-petclinic-wrk-mixed-small.log
+	mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-shopcart-wrk-mixed-small.log
+	mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small -- --jvm=native-image -Dnative-image.benchmark.stages=image,run | tee ni-petclinic-wrk-mixed-small.log
 	# Run the JVMCI profiler which periodically counts the maps in the heap.
-	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-shopcart-wrk-mixed-small.log
+	mx --java-home $JAVA_HOME -p vm --env $ENV benchmark shopcart-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-shopcart-wrk-mixed-small.log
 	mv profile_output.txt hotspot-shopcart-wrk-mixed-small.profile
-	~/git/mx/mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-petclinic-wrk-mixed-small.log
+	mx --java-home $JAVA_HOME -p vm --env $ENV benchmark petclinic-wrk:mixed-small  -- -agentpath:object_demographics/liboiprofiler.so | tee hotspot-petclinic-wrk-mixed-small.log
 	mv profile_output.txt hotspot-petclinic-wrk-mixed-small.profile
 }
 
@@ -33,5 +33,5 @@ function build_image {
 
 build_graal
 #build_image
-run_benchmark
-beep
+#run_benchmark
+#beep
