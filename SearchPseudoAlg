@@ -1,0 +1,178 @@
+
+---------------------------------------------Analysis-------------------------------------------------------
+
+SearchGraph(IRNode startNode){ //Uses control flow portion of the graph
+
+	IRNode currentNode;
+	Queue nodeQueue = new Queue; //Queue is FIFO
+	List<IRNodeID> safeList = new List;
+
+	nodeQueue.add(startNode); //startNode would usually be the Start node of the graph
+
+	while(!queue.empty){
+		currentNode = nodeQueue.peek();
+
+		if(currentNode.children){
+			for node in currentNode.children
+				nodeQueue.add(node);
+		}
+		if(currentNode.isAllocationOf(DataStruct)){
+			if(TraceReference(currentNode))
+				safeList.add(currentNode.ID);
+		}
+
+		nodeQueue.remove();
+	}
+	return safeList;
+}
+
+
+TraceReference(IRNode referenceNode){ //Uses data flow portion, same general structure
+
+	IRNode currentNode;
+	Queue nodeQueue = new Queue; //Queue is FIFO
+	nodeQueue.add(referenceNode);
+
+	while(!queue.empty){
+		currentNode = nodeQueue.peek();
+
+		if(currentNode.consumers){
+			for node in currentNode.consumers
+				nodeQueue.add(node);
+		}
+
+		if(currentNode.isFieldStore) //Check safety of the store
+			if(!TraceReference(currentNode)) //May remove it for now for testing
+				return False;
+				
+		if(currentNode.isFieldLoad) //Check safety of load
+			if(!TraceReference(currentNode)) //May remove it for now for testing
+				return False;
+
+		if(!VerifySafe(currentNode))
+			return False;
+
+		nodeQueue.remove();
+	}
+
+	return True;
+}
+
+//TODO Filed load and stores must mark field as interesting (receives tracked reference) rather than automatic trace
+
+
+VerifySafe(IRNode usageNode){ //Can be inlined I believe
+	
+	if(unsafeList.contains(usageNode.type))
+		return False;
+
+	return True;
+}
+
+unsafeList:
+	-areturn //return a reference from a method
+	-checkcast //checks whether an objectref is of a certain type
+	-instanceof //determines if an object objectref is of a given type
+	invokeinterface? //invokes an interface method on object objectref
+	invokespecial //invoke instance method on object objectref
+	invokevirtual //invoke virtual method on object objectref 
+		//Will need to expand checking for specific methods, as it stands this would
+		//block all methods. Need to make it more "granular" by researching dangerous
+		//methods for each type of data structure we want to replace.
+		//Distinguish: am I sending the struct's reference to a method, or calling a method OF the reference's struct
+	-.class() method
+	All reflection-related methods	
+		
+Guaranteed:
+    ReflectionGetCallerClassNode -> HotSpotReflectionGetCallerClassNode/SubstrateReflectionGetCallerClassNode
+    HubGetClassNode
+    CheckcastArrayCopyCallNode
+    CallTargetNode (for now) -> MethodCallTargetNode
+    ReturnNode (for now)
+    ClassIsArrayNode
+    GetClassNode
+    InstanceOfNode
+    InstanceOfDynamicNode
+
+
+
+Of Interest:
+    BasicObjectCloneNode
+    UnsafePartitionLoadNode/Store
+    FormatArrayNode
+    FormatObjectNode
+    AArch64ReadNode
+    DirectCallTargetNode
+    IndirectCallTargetNode
+    LoadIndexedPointerNode
+    PointerCastNode
+    AbstractEndNode
+    EndNode
+    PhiNode
+    ValuePhiNode
+    ObjectIsArrayNode
+    ArrayCopyNode
+    ArrayCompareToNode
+    ArrayEqualsNode
+    AssertionNode
+    BasicObjectCloneNode (needs to check what's being cloned)
+    Truffle stuff?
+
+
+TESTING:
+/home/romanb/MEGAsync/MSc/Thesis/Code/graal/sdk/latest_graalvm_home/bin/native-image -H:Dump=:2 -H:-PrintGraphFile -H:MethodFilter=main HelloWorld
+
+----------------------------------------------------Replacement----------------------------------------
+
+void replace(NewInstanceNode target, StructuredGraph graph, ResolvedJavaType type, FrameState state){
+        //TODO: Last 2 arguments are pseudocode only
+
+        //Creates queue of nodes to replace with appropriate ones
+        LinkedList<Node> nodeQueue = new LinkedList<>();
+        for (Node usage : target.usages()){
+            //TODO: Check if worth using the 2 skips in the ProfilerPhase code
+            nodeQueue.addLast(usage);
+        }
+
+        //TODO: Create EconomicHashMap type
+        //TODO: How to retrieve state at node from graph?
+
+        //Replaces allocation node
+        NewInstanceNode replacement = new NewInstanceNode(type, true, state);
+        graph.replaceFixedWithFixed(target, replacement);
+
+        while(!nodeQueue.isEmpty()){
+            Node currentNode = nodeQueue.peekFirst();
+
+            for (Node consumer : currentNode.usages()){
+                nodeQueue.addLast(consumer);
+            }
+
+            //replaceNode, will be one of the graph class methods, such as
+            //graph.replaceFixed, graph.replaceFixedWithFixed, graph.replaceFixedWithFloating, etc
+
+            if(currentNode.isAssignment()) { //We're assigning this structure to another object
+                generateAssignment(currentNode, graph, type, state);
+                graph.replaceFixedWithFixed(target, replacement);
+            }else if (currentNode.isAccess()){
+                generateAccess(currentNode, graph, type, state);
+                replaceNode(currentNode, graph, newType, newState);
+            }else if (currentNode.isMethod()){
+                generateMethod(currentNode, graph, type, state);
+                replaceNode(currentNode, graph, newType, newState);
+            }
+
+            nodeQueue.removeFirst();
+        }
+}
+
+
+
+------------------------------------------------------Profiler-----------------------------------------------
+
+
+		
+		
+		
+		
+		

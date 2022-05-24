@@ -1,31 +1,48 @@
 package com.oracle.svm.hosted.datastructrepl;
 
+import com.oracle.svm.core.graal.nodes.SubstrateReflectionGetCallerClassNode;
+import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.nodes.ConstantNode;
+import org.graalvm.compiler.hotspot.replacements.HotSpotReflectionGetCallerClassNode;
+import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
+import org.graalvm.compiler.hotspot.replacements.arraycopy.CheckcastArrayCopyCallNode;
 import org.graalvm.compiler.nodes.FrameState;
-import org.graalvm.compiler.nodes.PhiNode;
+import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.calc.IsNullNode;
-import org.graalvm.compiler.nodes.extended.ForeignCallNode;
-import org.graalvm.compiler.nodes.java.FinalFieldBarrierNode;
+import org.graalvm.compiler.nodes.extended.ClassIsArrayNode;
+import org.graalvm.compiler.nodes.extended.GetClassNode;
+import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
+import org.graalvm.compiler.nodes.java.InstanceOfNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.NewInstanceNode;
 import org.graalvm.compiler.nodes.java.StoreFieldNode;
 import org.graalvm.compiler.phases.Phase;
 
-import com.oracle.graal.pointsto.meta.AnalysisField;
-import com.oracle.svm.core.nodes.SubstrateMethodCallTargetNode;
-import com.oracle.svm.hosted.meta.HostedField;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 
 public class DataStructReplPhase extends Phase {
 
     private ArrayList<NewInstanceNode> safeNodes = new ArrayList<>();
+    private ArrayList<String> unsafeNodeTypes;
+
+    private void setUnsafeNodeTypes() {
+        //TODO: Need to get the stringnames of the node classes to avoid these calls
+        ArrayList<String> typeList = new ArrayList<>();
+        typeList.add(HotSpotReflectionGetCallerClassNode.class.toString());
+        typeList.add(SubstrateReflectionGetCallerClassNode.class.toString());
+        typeList.add(HubGetClassNode.class.toString());
+        typeList.add(CheckcastArrayCopyCallNode.class.toString());
+        typeList.add(CheckcastArrayCopyCallNode.class.toString());
+        typeList.add(MethodCallTargetNode.class.toString()); //TODO: For now
+        typeList.add(ReturnNode.class.toString()); //TODO: For now
+        typeList.add(ClassIsArrayNode.class.toString()); //TODO: more investigation needed
+        typeList.add(GetClassNode.class.toString());
+        typeList.add(InstanceOfNode.class.toString());
+        typeList.add(InstanceOfDynamicNode.class.toString());
+        this.unsafeNodeTypes = typeList;
+    }
 
     /*Returns whether the typename is in the hashmap family*/
     private static boolean canBeHashMap(String typename) {
@@ -60,7 +77,7 @@ public class DataStructReplPhase extends Phase {
             if(currentNode instanceof LoadFieldNode)
                 return false;
 
-            for (Node consumer : source.usages()){
+            for (Node consumer : currentNode.usages()){
                 nodeQueue.addLast(consumer);
             }
 
@@ -74,32 +91,23 @@ public class DataStructReplPhase extends Phase {
     }
 
     private boolean verifySafe(Node usageNode){
-        switch(usageNode.getNodeClass().toString()){
-            //TODO: Verify correct names for comparison
-            /*TODO: Where to get correct names for each of these?
-            *  areturn
-            *  checkcast
-            *  instanceof
-            *  invokeinterface
-            *  invokespecial
-            *  invokevirtual
-            * 	//Will need to expand checking for specific methods, as it stands this would
-            *   //block all methods. Need to make it more "granular" by researching dangerous
-            *   //methods for each type of data structure we want to replace.
-            *   //Distinguish: am I sending the struct's reference to a method,
-            *   or calling a method OF the reference's struct
-            *   .class() method
-            *   All reflection-related methods*/
-            case "Case1":
-            case "Case2":
-                return false;
-            default:
-                return true;
+        if(unsafeNodeTypes.contains(usageNode.getNodeClass().toString())) { //.toiString()
+            /*TODO: Distinguish: am I sending the struct's reference to a method,
+             *   or calling a method OF the reference's struct .class() method
+             *   Find all reflection methods to add*/
+            return false;
         }
+        return true;
     }
+
+    /*
+        /home/romanb/MEGAsync/MSc/Thesis/Code/graal/sdk/latest_graalvm_home/bin/native-image -H:Dump=:2 -H:-PrintGraphFile -H:MethodFilter=main HelloWorld
+     */
 
     @Override
     protected void run(StructuredGraph graph){
+
+        setUnsafeNodeTypes();
 
         /*TODO: Optimization possibility: Graph.java L.999
         *  can we use getNodes(nodeClass) where nodeClass is NewInstanceNode?
@@ -107,18 +115,23 @@ public class DataStructReplPhase extends Phase {
         for (Node n : graph.getNodes()){
             //Check if allocation
             if (n instanceof NewInstanceNode){
-                NewInstanceNode nin = (NewInstanceNode) n; //TODO: Why cast?
+                NewInstanceNode nin = (NewInstanceNode) n;
                 if (canBeHashMap(nin.instanceClass().getName())){
                     //TODO: Debug print, remove
                     System.out.println(String.format("[DataStructRepl] NewInstanceNode in %s:%s",
                             graph.method().getDeclaringClass().getName(),
                             graph.method().getName()));
-                    if(traceReference(nin))
+                    if(traceReference(nin)){
                         safeNodes.add(nin);
+                        System.out.println(String.format("[DataStructRepl] Found safe node in %s:%s",
+                                graph.method().getDeclaringClass().getName(),
+                                graph.method().getName()));
+                    }
                 }
             }
         }
-        //TODO: Remove?
-        System.out.println("Finished checking for replacement opportunities.");
+        //TODO: Remove
+        //System.out.println("Finished checking for replacement opportunities.");
     }
+
 }

@@ -19,7 +19,7 @@ public class DataStructProfilerFeature implements GraalFeature {
 
     public static class Options {
         @Option(help = "Enable data structure profiler.")//
-        public static final HostedOptionKey<Boolean> DataStructProfiler = new HostedOptionKey<>(true);
+        public static final HostedOptionKey<Boolean> DataStructProfiler = new HostedOptionKey<>(false);
     }
 
     @Override
