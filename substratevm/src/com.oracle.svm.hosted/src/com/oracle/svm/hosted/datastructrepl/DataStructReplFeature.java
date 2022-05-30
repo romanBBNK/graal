@@ -34,7 +34,8 @@ public class DataStructReplFeature implements GraalFeature {
     @Override
     public void registerGraalPhases(Providers providers, SnippetReflectionProvider snippetReflection, Suites suites, boolean hosted) {
         if (Options.DataStructScanner.getValue()) {
-            suites.getHighTier().prependPhase(new DataStructReplPhase());
+            //suites.getHighTier().prependPhase(new DataStructReplPhase());
+            suites.getHighTier().appendPhase(new DataStructReplPhase());
         }
     }
 

@@ -97,26 +97,13 @@ Guaranteed:
 
 
 Of Interest:
-    BasicObjectCloneNode
-    UnsafePartitionLoadNode/Store
-    FormatArrayNode
-    FormatObjectNode
-    AArch64ReadNode
-    DirectCallTargetNode
-    IndirectCallTargetNode
-    LoadIndexedPointerNode
-    PointerCastNode
-    AbstractEndNode
-    EndNode
-    PhiNode
-    ValuePhiNode
-    ObjectIsArrayNode
-    ArrayCopyNode
-    ArrayCompareToNode
-    ArrayEqualsNode
-    AssertionNode
+    BasicObjectCloneNode - New Instance to trace
+    UnsafePartitionLoadNode/Store - Unsafe (N)
+    DirectCallTargetNode - Method call - N for now
+    IndirectCallTargetNode - idem
+    ArrayCopyNode - Maybe, depends on what the array contains (data struct or not)
+    ArrayEqualsNode -N For now
     BasicObjectCloneNode (needs to check what's being cloned)
-    Truffle stuff?
 
 
 TESTING:

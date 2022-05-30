@@ -6,9 +6,11 @@ import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.replacements.HotSpotReflectionGetCallerClassNode;
 import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.CheckcastArrayCopyCallNode;
+import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.FrameState;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
+import org.graalvm.compiler.nodes.calc.ObjectEqualsNode;
 import org.graalvm.compiler.nodes.extended.ClassIsArrayNode;
 import org.graalvm.compiler.nodes.extended.GetClassNode;
 import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
@@ -21,6 +23,7 @@ import org.graalvm.compiler.phases.Phase;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.regex.Pattern;
 
 public class DataStructReplPhase extends Phase {
 
@@ -37,10 +40,10 @@ public class DataStructReplPhase extends Phase {
         typeList.add(CheckcastArrayCopyCallNode.class.toString());
         typeList.add(MethodCallTargetNode.class.toString()); //TODO: For now
         typeList.add(ReturnNode.class.toString()); //TODO: For now
-        typeList.add(ClassIsArrayNode.class.toString()); //TODO: more investigation needed
         typeList.add(GetClassNode.class.toString());
         typeList.add(InstanceOfNode.class.toString());
         typeList.add(InstanceOfDynamicNode.class.toString());
+        typeList.add(ObjectEqualsNode.class.toString());
         this.unsafeNodeTypes = typeList;
     }
 
@@ -62,9 +65,14 @@ public class DataStructReplPhase extends Phase {
 
         //FIFO queue for BFS reference tracing
         LinkedList<Node> nodeQueue = new LinkedList<>();
+        ArrayList<Integer> visitedNodes = new ArrayList<>();
         for (Node usage : source.usages()){
             //TODO: Check if worth using the 2 skips in the ProfilerPhase code
-            nodeQueue.addLast(usage);
+            //TODO: See about tagging nodes rather than this inefficient list
+            if (!visitedNodes.contains(Integer.getInteger(usage.toString(Verbosity.Id)))) {
+                nodeQueue.addLast(usage);
+                visitedNodes.add(Integer.getInteger(usage.toString(Verbosity.Id)));
+            }
         }
 
         while(!nodeQueue.isEmpty()){
@@ -78,7 +86,10 @@ public class DataStructReplPhase extends Phase {
                 return false;
 
             for (Node consumer : currentNode.usages()){
-                nodeQueue.addLast(consumer);
+                if (!visitedNodes.contains(Integer.getInteger(consumer.toString(Verbosity.Id)))) {
+                    nodeQueue.addLast(consumer);
+                    visitedNodes.add(Integer.getInteger(consumer.toString(Verbosity.Id)));
+                }
             }
 
             if(!verifySafe(currentNode))
@@ -91,7 +102,7 @@ public class DataStructReplPhase extends Phase {
     }
 
     private boolean verifySafe(Node usageNode){
-        if(unsafeNodeTypes.contains(usageNode.getNodeClass().toString())) { //.toiString()
+        if(unsafeNodeTypes.contains(usageNode.getNodeClass().getJavaClass().toString())) {
             /*TODO: Distinguish: am I sending the struct's reference to a method,
              *   or calling a method OF the reference's struct .class() method
              *   Find all reflection methods to add*/
@@ -106,26 +117,30 @@ public class DataStructReplPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph){
+        //TODO: Have phase run late in compilation steps [DONE]: Used append  @Feature:38
 
         setUnsafeNodeTypes();
 
-        /*TODO: Optimization possibility: Graph.java L.999
-        *  can we use getNodes(nodeClass) where nodeClass is NewInstanceNode?
-        * This substantially reduces iteration cycles.*/
         for (Node n : graph.getNodes()){
-            //Check if allocation
-            if (n instanceof NewInstanceNode){
-                NewInstanceNode nin = (NewInstanceNode) n;
-                if (canBeHashMap(nin.instanceClass().getName())){
-                    //TODO: Debug print, remove
-                    System.out.println(String.format("[DataStructRepl] NewInstanceNode in %s:%s",
-                            graph.method().getDeclaringClass().getName(),
-                            graph.method().getName()));
-                    if(traceReference(nin)){
-                        safeNodes.add(nin);
-                        System.out.println(String.format("[DataStructRepl] Found safe node in %s:%s",
+            //TODO: Filter package/class [DONE]
+            //"^Ljava|^Ljdk|^Lsun|^Lcom" lets through things it shouldn't
+            if (Pattern.matches("main", graph.method().getName())) {
+                if (n instanceof NewInstanceNode){
+                    NewInstanceNode nin = (NewInstanceNode) n;
+                    if (canBeHashMap(nin.instanceClass().getName())){
+                        System.out.println(String.format("[DataStructRepl] NewInstanceNode in %s:%s, id: %s \nClass: %s",
                                 graph.method().getDeclaringClass().getName(),
-                                graph.method().getName()));
+                                graph.method().getName(),
+                                n.toString(Verbosity.Id),
+                                nin.instanceClass().toString()));
+                        if(traceReference(nin)){
+                            safeNodes.add(nin);
+                            System.out.println(String.format("[DataStructRepl] Found safe node in %s:%s, id: %s \nClass: %s",
+                                    graph.method().getDeclaringClass().getName(),
+                                    graph.method().getName(),
+                                    n.toString(Verbosity.Id),
+                                    nin.instanceClass().toString()));
+                        }
                     }
                 }
             }
