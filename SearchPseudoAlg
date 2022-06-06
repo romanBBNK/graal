@@ -105,6 +105,8 @@ Of Interest:
     ArrayEqualsNode -N For now
     BasicObjectCloneNode (needs to check what's being cloned)
 
+    GraalVM JavaDoc
+
 
 TESTING:
 /home/romanb/MEGAsync/MSc/Thesis/Code/graal/sdk/latest_graalvm_home/bin/native-image -H:Dump=:2 -H:-PrintGraphFile -H:MethodFilter=main HelloWorld

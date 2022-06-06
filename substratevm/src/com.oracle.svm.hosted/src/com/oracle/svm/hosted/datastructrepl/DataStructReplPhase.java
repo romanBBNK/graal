@@ -1,17 +1,15 @@
 package com.oracle.svm.hosted.datastructrepl;
 
 import com.oracle.svm.core.graal.nodes.SubstrateReflectionGetCallerClassNode;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.replacements.HotSpotReflectionGetCallerClassNode;
 import org.graalvm.compiler.hotspot.replacements.HubGetClassNode;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.CheckcastArrayCopyCallNode;
 import org.graalvm.compiler.nodeinfo.Verbosity;
-import org.graalvm.compiler.nodes.FrameState;
+import org.graalvm.compiler.nodes.InvokeNode;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.calc.ObjectEqualsNode;
-import org.graalvm.compiler.nodes.extended.ClassIsArrayNode;
 import org.graalvm.compiler.nodes.extended.GetClassNode;
 import org.graalvm.compiler.nodes.java.InstanceOfDynamicNode;
 import org.graalvm.compiler.nodes.java.InstanceOfNode;
@@ -67,7 +65,6 @@ public class DataStructReplPhase extends Phase {
         LinkedList<Node> nodeQueue = new LinkedList<>();
         ArrayList<Integer> visitedNodes = new ArrayList<>();
         for (Node usage : source.usages()){
-            //TODO: Check if worth using the 2 skips in the ProfilerPhase code
             //TODO: See about tagging nodes rather than this inefficient list
             if (!visitedNodes.contains(Integer.getInteger(usage.toString(Verbosity.Id)))) {
                 nodeQueue.addLast(usage);
@@ -78,11 +75,23 @@ public class DataStructReplPhase extends Phase {
         while(!nodeQueue.isEmpty()){
             Node currentNode = nodeQueue.peekFirst();
 
-            //TODO: Field load/store marks fields as interesting rather than flat denial
-            if(currentNode instanceof StoreFieldNode)
+            // Skip if node is used in store but not as a value.
+            // If it is, false for now
+            if (currentNode instanceof StoreFieldNode && ((StoreFieldNode) currentNode).value() != source) {
                 return false;
+            }
 
-            if(currentNode instanceof LoadFieldNode)
+            //Removed same check for LoadFieldNode, if it's being loaded it should be safe
+
+            System.out.println("In while");
+
+            if(currentNode instanceof InvokeNode) {
+                //Direct#HashMap.getNode
+                System.out.println(((InvokeNode) currentNode).getTargetMethod());
+                return false; //TODO: Deeper comparison of InvokeNode
+            }
+
+            if(!verifySafe(currentNode))
                 return false;
 
             for (Node consumer : currentNode.usages()){
@@ -91,9 +100,6 @@ public class DataStructReplPhase extends Phase {
                     visitedNodes.add(Integer.getInteger(consumer.toString(Verbosity.Id)));
                 }
             }
-
-            if(!verifySafe(currentNode))
-                return false;
 
             nodeQueue.removeFirst();
         }
@@ -104,7 +110,7 @@ public class DataStructReplPhase extends Phase {
     private boolean verifySafe(Node usageNode){
         if(unsafeNodeTypes.contains(usageNode.getNodeClass().getJavaClass().toString())) {
             /*TODO: Distinguish: am I sending the struct's reference to a method,
-             *   or calling a method OF the reference's struct .class() method
+             *   or calling a method OF the reference's struct .class() method?
              *   Find all reflection methods to add*/
             return false;
         }
@@ -117,12 +123,10 @@ public class DataStructReplPhase extends Phase {
 
     @Override
     protected void run(StructuredGraph graph){
-        //TODO: Have phase run late in compilation steps [DONE]: Used append  @Feature:38
 
         setUnsafeNodeTypes();
 
         for (Node n : graph.getNodes()){
-            //TODO: Filter package/class [DONE]
             //"^Ljava|^Ljdk|^Lsun|^Lcom" lets through things it shouldn't
             if (Pattern.matches("main", graph.method().getName())) {
                 if (n instanceof NewInstanceNode){
@@ -145,8 +149,6 @@ public class DataStructReplPhase extends Phase {
                 }
             }
         }
-        //TODO: Remove
-        //System.out.println("Finished checking for replacement opportunities.");
     }
 
 }
