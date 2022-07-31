@@ -122,6 +122,7 @@ public class DataStructProfilerPhase extends Phase {
                         printLoadFieldNodeUsage(lfn, usage);
                     }
 
+
                     AnalysisField af = ((HostedField) lfn.field()).wrapped;
                     ValueNode[] args = new ValueNode[]{lfn, ConstantNode.forInt(af.getId(), graph)};
                     ForeignCallNode fcn = graph.add(new ForeignCallNode(DataStructProfilerSnippets.PROFILE_FIELD_LOAD, args));

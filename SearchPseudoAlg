@@ -12,8 +12,8 @@ SearchGraph(IRNode startNode){ //Uses control flow portion of the graph
 	while(!queue.empty){
 		currentNode = nodeQueue.peek();
 
-		if(currentNode.children){
-			for node in currentNode.children
+		if(currentNode.usages){
+			for node in currentNode.usages
 				nodeQueue.add(node);
 		}
 		if(currentNode.isAllocationOf(DataStruct)){
@@ -36,8 +36,8 @@ TraceReference(IRNode referenceNode){ //Uses data flow portion, same general str
 	while(!queue.empty){
 		currentNode = nodeQueue.peek();
 
-		if(currentNode.consumers){
-			for node in currentNode.consumers
+		if(currentNode.usages){
+			for node in currentNode.usages
 				nodeQueue.add(node);
 		}
 

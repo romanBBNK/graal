@@ -20,6 +20,9 @@ public class DataStructReplFeature implements GraalFeature {
     public static class Options {
         @Option(help = "Enable data structure scanner.")//
         public static final HostedOptionKey<Boolean> DataStructScanner = new HostedOptionKey<>(true);
+        @Option(help = "Enable data structure profiler.")//
+        public static final HostedOptionKey<Boolean> DataStructScannerProfiler = new HostedOptionKey<>(true);
+
     }
 
     @Override
@@ -29,14 +32,27 @@ public class DataStructReplFeature implements GraalFeature {
         if (!Options.DataStructScanner.getValue()) {
             return;
         }
+        if (Options.DataStructScannerProfiler.getValue()) {
+            for (SubstrateForeignCallDescriptor descriptor : DataStructProfilerSnippets.FOREIGN_CALLS) {
+                access.getBigBang().addRootMethod((AnalysisMethod) descriptor.findMethod(access.getMetaAccess()));
+            }
+
+            RuntimeSupport.getRuntimeSupport().addShutdownHook(DataStructProfilerSnippets.dumpProfileResults());
+        }
     }
 
     @Override
     public void registerGraalPhases(Providers providers, SnippetReflectionProvider snippetReflection, Suites suites, boolean hosted) {
         if (Options.DataStructScanner.getValue()) {
-            //suites.getHighTier().prependPhase(new DataStructReplPhase());
-            suites.getHighTier().appendPhase(new DataStructReplPhase());
+            //Had to redo replacement being highest priority phase due to available nodes in the graph
+            suites.getHighTier().prependPhase(new DataStructReplPhase());
+            //suites.getHighTier().appendPhase(new DataStructReplPhase());
         }
+    }
+
+    @Override
+    public void registerForeignCalls(SubstrateForeignCallsProvider foreignCalls) {
+        foreignCalls.register(DataStructProfilerSnippets.FOREIGN_CALLS);
     }
 
 }
