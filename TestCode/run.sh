@@ -155,6 +155,11 @@ else
 fi
 
 #HOW TO USE
+#EXPORT THE PACKAGE/MAIN CLASS NAME TO THE SHELL AS AN ENVIRONMENT VARIABLE BEFORE DOING ANYTHING ELSE
+#This may be the full package name, or part of one to allow optimization to affect multiple classes/subpackages.
+#export DataStructScannerPackage=<packageName>
+#export DataStructScannerPackage=HelloWorld
+
 #PERFORMANCE TEST:
 #/home/romanb/MEGAsync/MSc/Thesis/Code/TestCode/run.sh performanceTest <mainClass.class> <expectedExecutableName> <input>
 #/home/romanb/MEGAsync/MSc/Thesis/Code/TestCode/run.sh performanceTest HelloWorld helloworld 786432
