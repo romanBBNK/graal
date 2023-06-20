@@ -1,0 +1,109 @@
+# WARNING: Unable to attach Serviceability Agent. sun.jvm.hotspot.memory.Universe.getNarrowOopBase()
+# Running 64-bit HotSpot VM.
+# Using compressed oop with 3-bit shift.
+# Using compressed klass with 3-bit shift.
+# WARNING | Compressed references base/shifts are guessed by the experiment!
+# WARNING | Therefore, computed addresses are just guesses, and ARE NOT RELIABLE.
+# WARNING | Make sure to attach Serviceability Agent to get the reliable addresses.
+# Objects are 8 bytes aligned.
+# Field sizes by type: 4, 1, 1, 2, 2, 4, 4, 8, 8 [bytes]
+# Array element sizes: 4, 1, 1, 2, 2, 4, 4, 8, 8 [bytes]
+
+java.util.HashMap object internals:
+OFF  SZ                       TYPE DESCRIPTION               VALUE
+  0   8                            (object header: mark)     N/A
+  8   4                            (object header: class)    N/A
+ 12   4              java.util.Set AbstractMap.keySet        N/A
+ 16   4       java.util.Collection AbstractMap.values        N/A
+ 20   4                        int HashMap.size              N/A
+ 24   4                        int HashMap.modCount          N/A
+ 28   4                        int HashMap.threshold         N/A
+ 32   4                      float HashMap.loadFactor        N/A
+ 36   4   java.util.HashMap.Node[] HashMap.table             N/A
+ 40   4              java.util.Set HashMap.entrySet          N/A
+ 44   4                            (object alignment gap)    
+Instance size: 48 bytes
+Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
+
+java.util.concurrent.ConcurrentHashMap object internals:
+OFF  SZ                                                   TYPE DESCRIPTION                       VALUE
+  0   8                                                        (object header: mark)             N/A
+  8   4                                                        (object header: class)            N/A
+ 12   4                                          java.util.Set AbstractMap.keySet                N/A
+ 16   4                                   java.util.Collection AbstractMap.values                N/A
+ 20   4                                                    int ConcurrentHashMap.sizeCtl         N/A
+ 24   8                                                   long ConcurrentHashMap.baseCount       N/A
+ 32   4                                                    int ConcurrentHashMap.transferIndex   N/A
+ 36   4                                                    int ConcurrentHashMap.cellsBusy       N/A
+ 40   4          java.util.concurrent.ConcurrentHashMap.Node[] ConcurrentHashMap.table           N/A
+ 44   4          java.util.concurrent.ConcurrentHashMap.Node[] ConcurrentHashMap.nextTable       N/A
+ 48   4   java.util.concurrent.ConcurrentHashMap.CounterCell[] ConcurrentHashMap.counterCells    N/A
+ 52   4      java.util.concurrent.ConcurrentHashMap.KeySetView ConcurrentHashMap.keySet          N/A
+ 56   4      java.util.concurrent.ConcurrentHashMap.ValuesView ConcurrentHashMap.values          N/A
+ 60   4    java.util.concurrent.ConcurrentHashMap.EntrySetView ConcurrentHashMap.entrySet        N/A
+Instance size: 64 bytes
+Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
+
+org.graalvm.collections.EconomicMapImpl object internals:
+OFF  SZ                                  TYPE DESCRIPTION                      VALUE
+  0   8                                       (object header: mark)            N/A
+  8   4                                       (object header: class)           N/A
+ 12   4                                   int EconomicMapImpl.totalEntries     N/A
+ 16   4                                   int EconomicMapImpl.deletedEntries   N/A
+ 20   1                               boolean EconomicMapImpl.isSet            N/A
+ 21   3                                       (alignment/padding gap)          
+ 24   4                    java.lang.Object[] EconomicMapImpl.entries          N/A
+ 28   4                                byte[] EconomicMapImpl.hashArray        N/A
+ 32   4   org.graalvm.collections.Equivalence EconomicMapImpl.strategy         N/A
+ 36   4                                       (object alignment gap)           
+Instance size: 40 bytes
+Space losses: 3 bytes internal + 4 bytes external = 7 bytes total
+
+HashMap with 0 elems occupies java.util.HashMap@7e2d773bd footprint:
+     COUNT       AVG       SUM   DESCRIPTION
+         1        48        48   java.util.HashMap
+         1                  48   (total)
+
+ bytes.
+ConcurrentHashMap with 0 elems occupies java.util.concurrent.ConcurrentHashMap@2c039ac6d footprint:
+     COUNT       AVG       SUM   DESCRIPTION
+         1        64        64   java.util.concurrent.ConcurrentHashMap
+         1                  64   (total)
+
+ bytes.
+EconomicMap with 0 elems occupies org.graalvm.collections.EconomicMapImpl@6b9651f3d footprint:
+     COUNT       AVG       SUM   DESCRIPTION
+         1        40        40   org.graalvm.collections.EconomicMapImpl
+         1                  40   (total)
+
+ bytes.
+HashMap with 1 elems occupies 176 bytes.
+ConcurrentHashMap with 1 elems occupies 192 bytes.
+EconomicMap with 1 elems occupies 104 bytes.
+HashMap with 2 elems occupies 240 bytes.
+ConcurrentHashMap with 2 elems occupies 256 bytes.
+EconomicMap with 2 elems occupies 136 bytes.
+HashMap with 4 elems occupies 368 bytes.
+ConcurrentHashMap with 4 elems occupies 384 bytes.
+EconomicMap with 4 elems occupies 200 bytes.
+HashMap with 8 elems occupies 624 bytes.
+ConcurrentHashMap with 8 elems occupies 640 bytes.
+EconomicMap with 8 elems occupies 392 bytes.
+HashMap with 16 elems occupies 1200 bytes.
+ConcurrentHashMap with 16 elems occupies 1216 bytes.
+EconomicMap with 16 elems occupies 792 bytes.
+HashMap with 32 elems occupies 2352 bytes.
+ConcurrentHashMap with 32 elems occupies 2368 bytes.
+EconomicMap with 32 elems occupies 1504 bytes.
+HashMap with 64 elems occupies 4656 bytes.
+ConcurrentHashMap with 64 elems occupies 4672 bytes.
+EconomicMap with 64 elems occupies 2704 bytes.
+HashMap with 128 elems occupies 9264 bytes.
+ConcurrentHashMap with 128 elems occupies 9280 bytes.
+EconomicMap with 128 elems occupies 5864 bytes.
+HashMap with 512 elems occupies 36912 bytes.
+ConcurrentHashMap with 512 elems occupies 36928 bytes.
+EconomicMap with 512 elems occupies 23520 bytes.
+HashMap with 1024 elems occupies 73776 bytes.
+ConcurrentHashMap with 1024 elems occupies 73792 bytes.
+EconomicMap with 1024 elems occupies 46000 bytes.

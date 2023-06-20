@@ -7,7 +7,6 @@ import org.graalvm.compiler.phases.util.Providers;
 import com.oracle.graal.pointsto.meta.AnalysisMethod;
 import com.oracle.svm.core.annotate.AutomaticFeature;
 import com.oracle.svm.core.graal.GraalFeature;
-import com.oracle.svm.core.graal.meta.RuntimeConfiguration;
 import com.oracle.svm.core.graal.meta.SubstrateForeignCallsProvider;
 import com.oracle.svm.core.jdk.RuntimeSupport;
 import com.oracle.svm.core.option.HostedOptionKey;
@@ -22,7 +21,8 @@ public class DataStructReplFeature implements GraalFeature {
         public static final HostedOptionKey<Boolean> DataStructScanner = new HostedOptionKey<>(true);
         @Option(help = "Enable data structure profiler.")//
         public static final HostedOptionKey<Boolean> DataStructScannerProfiler = new HostedOptionKey<>(true);
-
+        @Option(help = "Enable shutdown hook for profiler.")//
+        public static final HostedOptionKey<Boolean> DataStructScannerHook = new HostedOptionKey<>(true);
     }
 
     @Override
@@ -36,17 +36,16 @@ public class DataStructReplFeature implements GraalFeature {
             for (SubstrateForeignCallDescriptor descriptor : DataStructProfilerSnippets.FOREIGN_CALLS) {
                 access.getBigBang().addRootMethod((AnalysisMethod) descriptor.findMethod(access.getMetaAccess()));
             }
-
-            RuntimeSupport.getRuntimeSupport().addShutdownHook(DataStructProfilerSnippets.dumpProfileResults());
+            if (Options.DataStructScannerHook.getValue())
+                RuntimeSupport.getRuntimeSupport().addShutdownHook(DataStructProfilerSnippets.dumpProfileResults());
         }
+
     }
 
     @Override
     public void registerGraalPhases(Providers providers, SnippetReflectionProvider snippetReflection, Suites suites, boolean hosted) {
         if (Options.DataStructScanner.getValue()) {
-            //Had to redo replacement being highest priority phase due to available nodes in the graph
             suites.getHighTier().prependPhase(new DataStructReplPhase());
-            //suites.getHighTier().appendPhase(new DataStructReplPhase());
         }
     }
 
