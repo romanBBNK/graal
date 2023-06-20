@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.netbeans.libs.graaljs">
+    <module_version install_time="1634340389089" last="true" origin="Ant" specification_version="2.0">
+        <file crc="3890147895" name="config/Modules/org-netbeans-libs-graaljs.xml"/>
+        <file crc="910382247" name="modules/ext/graaljs.jar"/>
+        <file crc="1346628633" name="modules/ext/icu4j.jar"/>
+        <file crc="2179011176" name="modules/ext/tregex.jar"/>
+        <file crc="1558766667" name="modules/org-netbeans-libs-graaljs.jar"/>
+    </module_version>
+</module>

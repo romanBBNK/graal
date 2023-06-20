@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.mxprojects">
+    <module_version install_time="1634340396329" last="true" origin="installer" specification_version="1.20">
+        <file crc="1703208057" name="config/Modules/org-graalvm-visualizer-mxprojects.xml"/>
+        <file crc="2195154683" name="modules/org-graalvm-visualizer-mxprojects.jar"/>
+        <file crc="3295232898" name="org.eclipse.jdt.core.prefs"/>
+    </module_version>
+</module>

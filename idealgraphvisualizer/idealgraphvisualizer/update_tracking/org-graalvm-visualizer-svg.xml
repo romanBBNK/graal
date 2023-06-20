@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.svg">
+    <module_version install_time="1634340401159" last="true" origin="installer" specification_version="1.0">
+        <file crc="1293327583" name="config/Modules/org-graalvm-visualizer-svg.xml"/>
+        <file crc="2534648734" name="modules/org-graalvm-visualizer-svg.jar"/>
+    </module_version>
+</module>

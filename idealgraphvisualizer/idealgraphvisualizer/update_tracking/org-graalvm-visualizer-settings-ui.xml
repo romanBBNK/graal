@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.settings.ui">
+    <module_version install_time="1634340400955" last="true" origin="installer" specification_version="1.0">
+        <file crc="2512943426" name="config/Modules/org-graalvm-visualizer-settings-ui.xml"/>
+        <file crc="1114869261" name="modules/org-graalvm-visualizer-settings-ui.jar"/>
+    </module_version>
+</module>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.search">
+    <module_version install_time="1634340411503" last="true" origin="installer" specification_version="1">
+        <file crc="74288265" name="config/Modules/org-graalvm-visualizer-search.xml"/>
+        <file crc="2174841549" name="modules/org-graalvm-visualizer-search.jar"/>
+    </module_version>
+</module>

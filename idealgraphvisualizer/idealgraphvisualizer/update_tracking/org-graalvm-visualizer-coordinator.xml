@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.coordinator">
+    <module_version install_time="1634340412198" last="true" origin="installer" specification_version="1.2">
+        <file crc="2069337561" name="config/Modules/org-graalvm-visualizer-coordinator.xml"/>
+        <file crc="1634776131" name="modules/org-graalvm-visualizer-coordinator.jar"/>
+    </module_version>
+</module>

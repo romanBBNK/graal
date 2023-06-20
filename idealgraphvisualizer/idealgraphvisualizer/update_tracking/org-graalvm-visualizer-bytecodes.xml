@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.bytecodes">
+    <module_version install_time="1634340404539" last="true" origin="installer" specification_version="1.1">
+        <file crc="2997797577" name="config/Modules/org-graalvm-visualizer-bytecodes.xml"/>
+        <file crc="356109533" name="modules/org-graalvm-visualizer-bytecodes.jar"/>
+    </module_version>
+</module>

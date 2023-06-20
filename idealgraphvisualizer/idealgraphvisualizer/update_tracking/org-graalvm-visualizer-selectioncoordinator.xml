@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.selectioncoordinator">
+    <module_version install_time="1634340405892" last="true" origin="installer" specification_version="1.1">
+        <file crc="1804787454" name="config/Modules/org-graalvm-visualizer-selectioncoordinator.xml"/>
+        <file crc="1633908507" name="modules/org-graalvm-visualizer-selectioncoordinator.jar"/>
+    </module_version>
+</module>

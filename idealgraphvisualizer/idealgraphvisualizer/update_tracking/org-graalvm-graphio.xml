@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.graphio">
+    <module_version install_time="1634340392058" last="true" origin="installer" specification_version="1.0">
+        <file crc="717478455" name="config/Modules/org-graalvm-graphio.xml"/>
+        <file crc="2705096057" name="modules/ext/graal-graphio.jar"/>
+        <file crc="992563456" name="modules/org-graalvm-graphio.jar"/>
+    </module_version>
+</module>

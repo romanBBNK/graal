@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.hierarchicallayout">
+    <module_version install_time="1634340398433" last="true" origin="installer" specification_version="1.0">
+        <file crc="2721990128" name="config/Modules/org-graalvm-visualizer-hierarchicallayout.xml"/>
+        <file crc="3607773249" name="modules/org-graalvm-visualizer-hierarchicallayout.jar"/>
+    </module_version>
+</module>

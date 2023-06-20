@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.shell">
+    <module_version install_time="1634340409143" last="true" origin="installer" specification_version="1.1">
+        <file crc="2017808564" name="config/Modules/org-graalvm-visualizer-shell.xml"/>
+        <file crc="974680432" name="modules/org-graalvm-visualizer-shell.jar"/>
+    </module_version>
+</module>

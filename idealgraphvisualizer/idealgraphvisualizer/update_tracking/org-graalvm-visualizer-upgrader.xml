@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="org.graalvm.visualizer.upgrader">
+    <module_version install_time="1634340401638" last="true" origin="installer" specification_version="1.0">
+        <file crc="2796896591" name="core/org-graalvm-visualizer-upgrader.jar"/>
+    </module_version>
+</module>
