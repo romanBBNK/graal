@@ -1,3 +1,14 @@
+## Data Structure Optimization work
+
+This work has been developed as part of a Master's thesis to implement data structure tuning. Additionally, work on data structure replacement was started but abandoned in favor of data structure tuning. All code-related material has been included in this repository, under the 
+
+* Open a [GitHub issue][issues] for bug reports, questions, or requests for enhancements.
+* Join the [GraalVM Slack][slack] to connect with the community and the GraalVM team.
+* Report a security vulnerability according to the [Reporting Vulnerabilities guide][reporting-vulnerabilities].
+
+
+
+
 [![GraalVM](.github/assets/logo_320x64.svg)][website]
 
 [![GraalVM downloads][badge-dl]][downloads] [![GraalVM docs][badge-docs]][docs] [![GraalVM on Slack][badge-slack]][slack] [![GraalVM on Twitter][badge-twitter]][twitter] [![GraalVM on YouTube][badge-yt]][youtube]  [![GraalVM Gate][badge-gate]][gate] [![License][badge-license]](#license)
